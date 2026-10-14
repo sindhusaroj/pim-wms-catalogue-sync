@@ -2,10 +2,9 @@
 
 This document is Deliverable 1. It explains what was built, and why, for the
 daily PIM → WMS catalogue sync. The catalogue is ~250,000 products today and
-expected to reach ~1,000,000 within 18 months. The full option analysis (three
-platforms, the cost model, and the AI strategy) is in
-`Product_Catalogue_Integration_Architecture.docx`. This file records the
-recommended serverless architecture as it was implemented in this repository.
+expected to reach ~1,000,000 within 18 months. It records the serverless
+architecture as it was implemented in this repository, and why it was chosen
+over a containerised ECS Fargate + Airflow platform and a lakehouse platform.
 
 Diagram sources are in [`mermaid.md`](mermaid.md). The rendered SVGs are in
 [`docs/diagrams/`](docs/diagrams).

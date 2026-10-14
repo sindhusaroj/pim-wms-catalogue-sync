@@ -75,7 +75,7 @@ first month; **Low** means when it becomes relevant.
 
 | | |
 |---|---|
-| **Unfinished** | Nothing from section 15 of the architecture document is built. Rejection triage is rule-based only (`app/domain/rejections.py`). |
+| **Unfinished** | None of the planned AI layer is built. Rejection triage is rule-based only (`app/domain/rejections.py`). |
 | **Proposed solution** | As designed: a design-time mapping and test co-pilot whose output is `mapping.json` changes merged by PR, and a Bedrock knowledge base over the specs, runbooks and incidents to triage rejections and draft remediation. Read-only credentials, guardrails, citations, an evaluation set gating deployment, and a human approval gate on every action. |
 | **Validation** | Classify a seeded rejection mix (398 × `999`, 14 × missing SKU) with citations, scored against the evaluation set. |
 | **Why not done** | An AI layer over an unproven pipeline would explain failures that shouldn't happen. The sequencing is the point. |

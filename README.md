@@ -2,9 +2,9 @@
 
 This repository runs the daily synchronisation of the product catalogue from the
 PIM into the WMS. It is rebuilt as a **serverless, event-driven pipeline on AWS**
-(the recommended design in the architecture document): Step Functions, Lambda, S3, SQS and
-DynamoDB, with Terraform for the infrastructure. It is runnable and testable
-locally against the supplied mocks and LocalStack.
+(Step Functions, Lambda, S3, SQS and DynamoDB), with Terraform for the
+infrastructure. It is runnable and testable locally against the supplied mocks
+and LocalStack.
 
 - **[ARCHITECTURE.md](ARCHITECTURE.md):** design, execution, data and failure
   flows, rate limiting, "never sent twice", AWS choices, security,

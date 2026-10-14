@@ -1,7 +1,7 @@
 # Diagram sources (Mermaid)
 
-Source for every diagram in `README.md` and `ARCHITECTURE.md`. The figures follow the
-architecture document's Appendix B and have been updated to show what was **built**.
+Source for every diagram in `README.md` and `ARCHITECTURE.md`. The figures show what
+was **built**.
 Items marked *(future, Uₙ)* are listed in `UNFINISHED.md`.
 
 Render to `docs/diagrams/*.svg` with:

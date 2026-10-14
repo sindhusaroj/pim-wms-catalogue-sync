@@ -1,0 +1,116 @@
+{
+  "Comment": "PIM -> WMS catalogue synchronisation (Option 1). Rendered by Terraform templatefile().",
+  "TimeoutSeconds": ${run_timeout_seconds},
+  "StartAt": "StartRun",
+  "States": {
+    "StartRun": {
+      "Type": "Task",
+      "Comment": "AcquireRunLock, GetSecrets, ProbePIM, plan the page fan-out",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {"FunctionName": "${start_run_arn}", "Payload.$": "$"},
+      "ResultSelector": {"run_id.$": "$.Payload.run_id", "pim_total.$": "$.Payload.pim_total", "page_batches.$": "$.Payload.page_batches"},
+      "Retry": [{"ErrorEquals": ["Lambda.ServiceException", "Lambda.TooManyRequestsException", "Lambda.SdkClientException"], "IntervalSeconds": 2, "MaxAttempts": 3, "BackoffRate": 2, "JitterStrategy": "FULL"}],
+      "Catch": [{"ErrorEquals": ["States.ALL"], "ResultPath": "$.error", "Next": "StartFailed"}],
+      "Next": "ExtractPages"
+    },
+    "ExtractPages": {
+      "Type": "Map",
+      "Comment": "Distributed Map: MaxConcurrency N is the global PIM rate control; each worker runs at budget/N. No tolerated failures (the default): a worker error fails the run",
+      "ItemsPath": "$.page_batches",
+      "ItemSelector": {"run_id.$": "$.run_id", "pages.$": "$$.Map.Item.Value"},
+      "MaxConcurrency": ${extract_concurrency},
+      "ItemProcessor": {
+        "ProcessorConfig": {"Mode": "DISTRIBUTED", "ExecutionType": "${map_execution_type}"},
+        "StartAt": "ExtractPageBatch",
+        "States": {
+          "ExtractPageBatch": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::lambda:invoke",
+            "Parameters": {"FunctionName": "${extract_pages_arn}", "Payload.$": "$"},
+            "OutputPath": "$.Payload",
+            "Retry": [{"ErrorEquals": ["States.ALL"], "IntervalSeconds": 2, "MaxAttempts": 3, "BackoffRate": 2, "JitterStrategy": "FULL"}],
+            "End": true
+          }
+        }
+      },
+      "ResultPath": null,
+      "Catch": [{"ErrorEquals": ["States.ALL"], "ResultPath": "$.error", "Next": "FailRun"}],
+      "Next": "AssembleExport"
+    },
+    "AssembleExport": {
+      "Type": "Task",
+      "Comment": "Page shards -> canonical CSV in S3 (90-day retention) + curated work chunks",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {"FunctionName": "${assemble_export_arn}", "Payload": {"run_id.$": "$.run_id"}},
+      "ResultSelector": {"chunks.$": "$.Payload.chunks"},
+      "ResultPath": "$.export",
+      "Retry": [{"ErrorEquals": ["States.ALL"], "IntervalSeconds": 5, "MaxAttempts": 2, "BackoffRate": 2}],
+      "Catch": [{"ErrorEquals": ["States.ALL"], "ResultPath": "$.error", "Next": "FailRun"}],
+      "Next": "DiffChunks"
+    },
+    "DiffChunks": {
+      "Type": "Map",
+      "Comment": "ValidateAndDiff per chunk, then dispatch changed products to SQS in batches of 100",
+      "ItemsPath": "$.export.chunks",
+      "MaxConcurrency": ${diff_concurrency},
+      "ItemSelector": {"run_id.$": "$.run_id", "chunk.$": "$$.Map.Item.Value"},
+      "ItemProcessor": {
+        "ProcessorConfig": {"Mode": "INLINE"},
+        "StartAt": "ValidateAndDiff",
+        "States": {
+          "ValidateAndDiff": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::lambda:invoke",
+            "Parameters": {"FunctionName": "${diff_chunk_arn}", "Payload.$": "$"},
+            "OutputPath": "$.Payload",
+            "Retry": [{"ErrorEquals": ["States.ALL"], "IntervalSeconds": 2, "MaxAttempts": 3, "BackoffRate": 2, "JitterStrategy": "FULL"}],
+            "End": true
+          }
+        }
+      },
+      "ResultPath": null,
+      "Catch": [{"ErrorEquals": ["States.ALL"], "ResultPath": "$.error", "Next": "FailRun"}],
+      "Next": "WaitForLoad"
+    },
+    "WaitForLoad": {
+      "Type": "Wait",
+      "Comment": "The loader Lambda consumes SQS independently; poll the batch ledger",
+      "Seconds": 15,
+      "Next": "CheckLoadProgress"
+    },
+    "CheckLoadProgress": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {"FunctionName": "${check_load_progress_arn}", "Payload": {"run_id.$": "$.run_id"}},
+      "ResultSelector": {"done.$": "$.Payload.done", "outstanding.$": "$.Payload.outstanding"},
+      "ResultPath": "$.load",
+      "Retry": [{"ErrorEquals": ["States.ALL"], "IntervalSeconds": 2, "MaxAttempts": 3, "BackoffRate": 2}],
+      "Catch": [{"ErrorEquals": ["States.ALL"], "ResultPath": "$.error", "Next": "FailRun"}],
+      "Next": "LoadDone?"
+    },
+    "LoadDone?": {
+      "Type": "Choice",
+      "Choices": [{"Variable": "$.load.done", "BooleanEquals": true, "Next": "FinalizeRun"}],
+      "Default": "WaitForLoad"
+    },
+    "FinalizeRun": {
+      "Type": "Task",
+      "Comment": "Reconcile totals, set COMPLETE / PARTIAL / NO_CHANGE, release the run lock",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {"FunctionName": "${finalize_run_arn}", "Payload": {"run_id.$": "$.run_id"}},
+      "OutputPath": "$.Payload",
+      "Retry": [{"ErrorEquals": ["States.ALL"], "IntervalSeconds": 2, "MaxAttempts": 3, "BackoffRate": 2}],
+      "Catch": [{"ErrorEquals": ["States.ALL"], "ResultPath": "$.error", "Next": "FailRun"}],
+      "End": true
+    },
+    "FailRun": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {"FunctionName": "${fail_run_arn}", "Payload": {"run_id.$": "$.run_id", "error.$": "$.error"}},
+      "Retry": [{"ErrorEquals": ["States.ALL"], "IntervalSeconds": 2, "MaxAttempts": 3, "BackoffRate": 2}],
+      "Next": "RunFailed"
+    },
+    "RunFailed": {"Type": "Fail", "Error": "CatalogueSyncFailed", "Cause": "See the run ledger for failure_reason"},
+    "StartFailed": {"Type": "Fail", "Error": "CatalogueSyncNotStarted", "Cause": "Run lock held or PIM probe failed"}
+  }
+}

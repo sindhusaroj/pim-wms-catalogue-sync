@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "description": "PIM product -> WMS product. Reviewed configuration, not code (architecture section 7.4).",
+  "fields": [
+    {"source": "id", "target": "sku"},
+    {"source": "name", "target": "description"},
+    {"source": "price", "target": "selling_price", "type": "decimal"},
+    {"source": "currency", "target": "currency"},
+    {"source": "category", "target": "category_code"},
+    {"source": "updated_at", "target": "source_updated_at"}
+  ]
+}

@@ -1,1 +1,10 @@
-Added .gitignore file
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+build/
+runtime/
+*.log
+terraform/**/.terraform/
+terraform/**/terraform.tfstate*
+~$*.docx

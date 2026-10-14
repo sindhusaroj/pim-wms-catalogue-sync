@@ -1,0 +1,46 @@
+# Local AWS for testing: LocalStack plus a Terraform runner, so no local
+# Terraform or AWS account is needed. Use together with the supplied
+# docker-compose.yml (unchanged), which runs the mock PIM and WMS:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.localstack.yml up -d --build
+#   docker compose -f docker-compose.yml -f docker-compose.localstack.yml run --rm terraform
+#
+services:
+  localstack:
+    image: localstack/localstack:4.4
+    container_name: catalogue-localstack
+    ports: ["4566:4566"]
+    environment:
+      SERVICES: s3,dynamodb,sqs,sns,secretsmanager,kms,iam,sts,cloudwatch,logs,lambda,stepfunctions,scheduler
+      # DynamoDB Local on disk-backed SQLite is very slow under concurrent writes;
+      # LocalStack state is ephemeral anyway, so keep it in memory.
+      DYNAMODB_IN_MEMORY: "1"
+      # Load services at start-up: lazy loading of several services at once can
+      # deadlock inside LocalStack (seen as sns.CreateTopic => 500 during apply).
+      EAGER_SERVICE_LOADING: "1"
+      # Optional: only needed for LocalStack images that require an account token.
+      LOCALSTACK_AUTH_TOKEN: ${LOCALSTACK_AUTH_TOKEN:-}
+      # Lambda containers (enable_compute = true) join this network to reach the mocks.
+      LAMBDA_DOCKER_NETWORK: ${COMPOSE_PROJECT_NAME:-cidroy_repository}_default
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:4566/_localstack/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  terraform:
+    image: hashicorp/terraform:1.9.8
+    profiles: ["infra"]
+    depends_on:
+      localstack:
+        condition: service_healthy
+    working_dir: /workspace/terraform/envs/local
+    volumes:
+      - ".:/workspace"
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        terraform init -input=false &&
+        terraform apply -auto-approve -input=false -var localstack_endpoint=http://localstack:4566

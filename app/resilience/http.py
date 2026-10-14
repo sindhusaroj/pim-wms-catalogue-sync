@@ -72,9 +72,18 @@ class CallResult:
         return self.response.json()
 
 
-def build_http_client(base_url: str, connect_timeout: float, read_timeout: float) -> httpx.Client:
+def build_http_client(base_url: str, connect_timeout: float, read_timeout: float,
+                      keepalive_expiry: float = 2.0) -> httpx.Client:
+    """Pooled client for a vendor API.
+
+    Idle pooled connections are dropped after ``keepalive_expiry`` seconds, well
+    below common server idle timeouts (uvicorn 5 s, many load balancers 60 s).
+    Reusing a connection the server has already closed fails mid-request, which
+    for a WMS write is an AMBIGUOUS outcome; expiring them first avoids that.
+    """
     timeout = httpx.Timeout(read_timeout, connect=connect_timeout)
-    return httpx.Client(base_url=base_url, timeout=timeout)
+    limits = httpx.Limits(keepalive_expiry=keepalive_expiry)
+    return httpx.Client(base_url=base_url, timeout=timeout, limits=limits)
 
 
 class ResilientClient:

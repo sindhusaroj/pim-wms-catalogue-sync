@@ -89,7 +89,10 @@ module "load" {
   name_prefix                = local.name_prefix
   kms_key_arn                = module.security.kms_key_arn
   enable_compute             = var.enable_compute
-  visibility_timeout_seconds = 300
+  # Local: a dropped ReceiveMessage response strands its messages until the
+  # visibility timeout expires. 60 s still exceeds a worst-case delivery
+  # attempt here (6 tries with jittered backoff against an instant mock).
+  visibility_timeout_seconds = 60
   load_concurrency           = var.load_concurrency
   runs_table_arn             = module.state.table_arns["runs"]
   product_state_table_arn    = module.state.table_arns["product-state"]

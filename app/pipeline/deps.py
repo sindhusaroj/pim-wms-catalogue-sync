@@ -92,8 +92,8 @@ def build_deps(settings: Settings, *, pim_http: httpx.Client | None = None, wms_
         pim_secret=pim_secret or SecretsManagerSecret(secrets, settings.pim_api_key_secret_id),
         wms_secret=wms_secret or SecretsManagerSecret(secrets, settings.wms_api_key_secret_id),
         pim_http=pim_http or build_http_client(settings.product_api_url, settings.connect_timeout_seconds,
-                                               settings.read_timeout_seconds),
+                                               settings.read_timeout_seconds, settings.keepalive_expiry_seconds),
         wms_http=wms_http or build_http_client(settings.warehouse_api_url, settings.connect_timeout_seconds,
-                                               settings.read_timeout_seconds),
+                                               settings.read_timeout_seconds, settings.keepalive_expiry_seconds),
         sleep=sleep,
     )

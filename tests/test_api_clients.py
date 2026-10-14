@@ -163,3 +163,11 @@ def test_api_key_and_idempotency_key_headers_are_sent():
     WarehouseApiClient(resilient(script, secret=StaticSecret("wms-key"))).send_batch([{"sku": "P1"}], "abc")
     assert script.requests[0].headers["X-API-Key"] == "wms-key"
     assert script.requests[0].headers["Idempotency-Key"] == "abc"
+
+
+def test_vendor_clients_expire_idle_connections_before_common_server_timeouts():
+    from app.resilience.http import build_http_client
+
+    client = build_http_client("http://vendor", 5, 30)
+    pool = client._transport._pool
+    assert pool._keepalive_expiry == 2.0  # below uvicorn's 5 s idle timeout

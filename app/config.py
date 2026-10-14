@@ -68,6 +68,7 @@ class Settings:
     backoff_cap_seconds: float = 32.0
     connect_timeout_seconds: float = 5.0
     read_timeout_seconds: float = 30.0
+    keepalive_expiry_seconds: float = 2.0
     breaker_window: int = 20
     breaker_failure_ratio: float = 0.5
     breaker_cooldown_seconds: float = 30.0
@@ -149,6 +150,7 @@ def load_settings() -> Settings:
         backoff_cap_seconds=_float("BACKOFF_CAP_SECONDS", 32.0),
         max_delivery_attempts=_int("MAX_DELIVERY_ATTEMPTS", 5),
         retry_visibility_seconds=_int("RETRY_VISIBILITY_SECONDS", 10),
+        keepalive_expiry_seconds=_float("KEEPALIVE_EXPIRY_SECONDS", 2.0),
         breaker_cooldown_seconds=_float("BREAKER_COOLDOWN_SECONDS", 30.0),
         wms_honours_idempotency_key=_bool("WMS_HONOURS_IDEMPOTENCY_KEY", False),
         load_wait_timeout_seconds=_int("LOAD_WAIT_TIMEOUT_SECONDS", 25 * 60),

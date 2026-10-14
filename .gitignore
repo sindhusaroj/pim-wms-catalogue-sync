@@ -8,3 +8,6 @@ runtime/
 terraform/**/.terraform/
 terraform/**/terraform.tfstate*
 ~$*.docx
+
+# Personal notes and interview prep: never committed
+documents/

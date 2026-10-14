@@ -2,7 +2,7 @@
 
 This repository runs the daily synchronisation of the product catalogue from the
 PIM into the WMS. It is rebuilt as a **serverless, event-driven pipeline on AWS**
-(Option 1 of the architecture document): Step Functions, Lambda, S3, SQS and
+(the recommended design in the architecture document): Step Functions, Lambda, S3, SQS and
 DynamoDB, with Terraform for the infrastructure. It is runnable and testable
 locally against the supplied mocks and LocalStack.
 
@@ -15,7 +15,7 @@ locally against the supplied mocks and LocalStack.
 
 ## Architecture
 
-![Option 1 architecture](docs/diagrams/03-architecture.svg)
+![Serverless architecture](docs/diagrams/03-architecture.svg)
 
 ### Before and after
 
@@ -51,7 +51,7 @@ locally against the supplied mocks and LocalStack.
 
 ![Local harness](docs/diagrams/10-local-harness.svg)
 
-### Why Option 1
+### Why serverless
 
 ![Decision path](docs/diagrams/12-decision-path.svg)
 

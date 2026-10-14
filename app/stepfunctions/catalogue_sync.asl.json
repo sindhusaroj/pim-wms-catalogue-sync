@@ -1,5 +1,5 @@
 {
-  "Comment": "PIM -> WMS catalogue synchronisation (Option 1). Rendered by Terraform templatefile().",
+  "Comment": "PIM -> WMS catalogue synchronisation. Rendered by Terraform templatefile().",
   "TimeoutSeconds": ${run_timeout_seconds},
   "StartAt": "StartRun",
   "States": {

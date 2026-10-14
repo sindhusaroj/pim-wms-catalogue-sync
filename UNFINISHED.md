@@ -3,7 +3,7 @@
 This is Deliverable 3. Every item is stated openly.
 
 **Built and verified:**
-- The Option 1 pipeline, in `app/`.
+- The serverless pipeline, in `app/`.
 - Terraform for local, dev and prod. Local was applied to LocalStack, including
   the state machine and Lambdas. Dev and prod pass `terraform validate`.
 - 67 unit, chaos, rate-conformance and pipeline tests.

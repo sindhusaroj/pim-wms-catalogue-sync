@@ -66,7 +66,7 @@ flowchart TB
     class C1,C2 warn
 ```
 
-## 3. Option 1 architecture (as built)
+## 3. Serverless architecture (as built)
 
 <!-- file: 03-architecture -->
 ```mermaid
@@ -369,7 +369,7 @@ flowchart LR
         N4["send_products<br/>serial, one retry"]
         N5["print result"]
     end
-    subgraph TGT["After - Option 1 (app/)"]
+    subgraph TGT["After - serverless pipeline (app/)"]
         direction TB
         T1["pipeline/extract.py<br/>clients/product_api.py<br/>resilience/*"]
         T2["pipeline/assemble.py<br/>storage/s3.py - streamed CSV,<br/>90-day lifecycle"]
@@ -394,10 +394,10 @@ flowchart LR
 ```mermaid
 flowchart TB
     Q0{"Beyond ~2M products, many<br/>sources and destinations, or<br/>freshness tighter than daily?"}
-    Q0 -->|Yes| C["Option 3<br/>Lakehouse + streaming"]
+    Q0 -->|Yes| C["Lakehouse + streaming"]
     Q0 -->|No| Q1{"A step over 15 minutes,<br/>a static egress IP, or a<br/>hard portability requirement?"}
-    Q1 -->|Yes| B["Option 2<br/>ECS Fargate + Airflow"]
-    Q1 -->|No| A["Option 1<br/>Serverless event-driven<br/>BUILT"]
+    Q1 -->|Yes| B["ECS Fargate + Airflow"]
+    Q1 -->|No| A["Serverless event-driven<br/>BUILT"]
     classDef rec fill:#c8e6c9,stroke:#2e7d32,stroke-width:3px,color:#000
     classDef alt fill:#fff3e0,stroke:#ef6c00,stroke-width:2px,color:#000
     class A rec

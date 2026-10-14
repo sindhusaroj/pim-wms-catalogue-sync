@@ -5,7 +5,7 @@ daily PIM → WMS catalogue sync. The catalogue is ~250,000 products today and
 expected to reach ~1,000,000 within 18 months. The full option analysis (three
 platforms, the cost model, and the AI strategy) is in
 `Product_Catalogue_Integration_Architecture.docx`. This file records the
-recommended **Option 1** as it was implemented in this repository.
+recommended serverless architecture as it was implemented in this repository.
 
 Diagram sources are in [`mermaid.md`](mermaid.md). The rendered SVGs are in
 [`docs/diagrams/`](docs/diagrams).
@@ -43,7 +43,7 @@ rather than against the mocks.
 
 ## 2. Architecture overview
 
-![Option 1 architecture](docs/diagrams/03-architecture.svg)
+![Serverless architecture](docs/diagrams/03-architecture.svg)
 
 **Execution model.** A scheduled, serverless batch pipeline:
 
@@ -61,12 +61,12 @@ rather than against the mocks.
 - It meets the window with ~2.5× headroom (≈9 min expected at 1M products,
   ≈19 min worst case).
 - It costs roughly USD 70–120 a month with no fixed floor, against ~USD 700 for
-  ECS + Airflow (Option 2).
+  a containerised ECS Fargate + Airflow platform.
 - It has no servers to patch.
 - Concurrency, which is the actual fix, is configuration rather than code.
 - It is the fastest of the three to deliver.
 
-A lakehouse (Option 3) is premature with one source and one destination.
+A lakehouse platform is premature with one source and one destination.
 
 ![Decision path](docs/diagrams/12-decision-path.svg)
 
